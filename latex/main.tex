@@ -10,9 +10,13 @@
 \usepackage[colorlinks,linkcolor=red]{hyperref}
 \usepackage{listings}
 % \usepackage[UTF8]{ctex}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
 
 %opening
-\title{\textbf{[Spring 2024] CS172 Assignment 1\\
+\title{\textbf{[Spring 2024] CS172 Assignment 2\\
 Basics in computer vision}}
 
 \author{\#NAME \#StudentID}
@@ -24,7 +28,7 @@ Basics in computer vision}}
 
 \section*{Acknowledgements}
 \begin{enumerate} 
-    \item Deadline: \textcolor{red}{\textbf{2024/4/30 23:59:00}}. Late Policy please refer to the course slides.
+    \item Deadline: \textcolor{red}{\textbf{2024/6/11 23:59:00}}. Late Policy please refer to the course slides.
     
     \item Please submit your assignment in \textbf{Gradescope} in PDF format.  Registration code: 4GNJPE
     \begin{itemize}
@@ -37,9 +41,9 @@ Basics in computer vision}}
     
     \item Please upload your code zip to the \textbf{ShanghaiTech cloud} disk.
     \begin{itemize}
-        \item[$\bullet$] \small{\url{https://epan.shanghaitech.edu.cn/l/CFKM20}}
+        \item[$\bullet$] \small{\url{https://epan.shanghaitech.edu.cn/l/zF2Iu6}}
         \item[$\bullet$] All source files and \textit{readme} should be included but remember to remove the datasets.
-        \item[$\bullet$] Your zip should be named as CS172\_NAME\_ID\_hw1.zip.
+        \item[$\bullet$] Your zip should be named as CS172\_NAME\_ID\_hw2.zip.
     \end{itemize}
     
     
@@ -56,93 +60,68 @@ Basics in computer vision}}
 \newpage
 
 
-\section{[25 points] Bag-of-Words model}
-BoW can be applied to image classification, image retrieval, etc. The general process is to first extract image features, then cluster the features, build a codebook based on the clustering results, and obtain the vector corresponding to each image through feature quantization and pooling. We require using \textbf{SIFT} to extract image features, and for clustering, we recommend \textbf{K-means}, but you are free to try any other cluster algorithm. Use \textbf{animals(dog, cat, pandas)} dataset that we offered in the compressed package. Here are some \href{https://www.kaggle.com/code/bygbrains/dog-cat-pandas-image-classifier}{tutorials} you can refer to when processing data.
-\begin{enumerate} 
+\section{[10 points] Understand Point Cloud}
+A point cloud is a discrete set of data points in space. The points may represent a 3D shape or object. Each point position has its set of Cartesian coordinates (X, Y, Z). The point cloud is one of the most important and commonly used representations for object and scene shapes. In this section, you are required to visualize and plot at least three point clouds in the report. Please use the point cloud source we offered in the compressed package. You are free to use any third-party libraries like matplotlib or open3D for this section.
 
-    \item Write a function that can read an image from the dataset and display it with the corresponding label. 
-    
-    \item Uniform image size. Select an image and apply at least two image augmentation methods (like flip, rotation, blur, mixup, etc.) to it. Show the results. 
-    \item Compute SIFT for all the images and select five pictures to visualize the results after SIFT. We suggest saving the features on disks after each iteration to avoid memory issues. 
-    \item For all the features, apply with the K-Means algorithm. Discuss the influence of different values of k on the results.
-    \item Use the BoW model to quantize features and represent by frequencies.
-    
-\end{enumerate}
 
 ~\\
-~\\
-~\\
-~\\
-~\\
-~ \\
+% ~\\ 
+% ~\\
+% ~\\
+% ~\\
+% ~ \\
 
-\section{[25 points] SVM classification}
+\section{[20 points] Implement Iterative Closest Point Algorithm}
+Point Cloud Registration is a fundamental problem in 3D computer vision and photogrammetry. Given several sets of points in different coordinate systems, the aim of registration is to find the transformation that best aligns all of them into a common coordinate system. Point Cloud Registration plays a significant role in many vision applications such as 3D model reconstruction, cultural heritage management, landslide monitoring and solar energy analysis.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{registration.png}
+    \caption{An example of point cloud registration}
+    \label{fig:registraion}
+\end{figure}
 
-A Support Vector Machine (SVM) is a machine learning algorithm that can be used for classification or regression tasks. In the context of classification, the SVM algorithm \textbf{finds a hyperplane} that separates the data points in different classes with the maximum margin. The hyperplane is defined by a set of weights and biases that are learned from the training data. \textbf{In this section, you need to use the results obtained in the previous section, and you are required to:}
+In this part, you are required to implement iterative closest point (ICP) algorithm to find a rigid transformation such that, given two finite size point clouds $\{P,\, Q\}$, the difference between point cloud Q and the transformed point cloud P is minimized. The ICP algorighm can be roughly breaked down into (a) finding a rigid transformation given two point clouds with \textbf{same number of points} and (b) Fixing point cloud Q and iteratively choosing a subset of point cloud P to compute rigid transformation untill convergence.
 
-\begin{enumerate}
-    \item Implement an SVM classifier with hinge loss.
-    \item Train your model with the extracted BoW features and try to improve the performance.
-    \item Explain the backward pass in the training of the SVM classifier.
-\end{enumerate} 
+\begin{algorithm}[h]
+\caption{ICP algorithm}\label{alg:icp}
+\begin{algorithmic}
+\Require source point cloud $p=\{p_i\}^{n_p}$, target point cloud $q=\{q_i\}^{n_q}$, threshold $\epsilon$;
+\Ensure A rigid transformation: rotation $R$ and translation $t$;
+\State $\bar p \leftarrow \textbf{MEAN}(P), \quad \bar q \leftarrow \textbf{MEAN}(Q)$;
+\State $\hat{p_i} = p_i - \bar{p}, \quad \hat{q_i} = q_i - \bar{q}$;
+\State $H = \sum_{i=1}^{n_p}{\hat{p_i}\hat{q_i}^T}$
 
-\emph{Hint: Principal component analysis (PCA) is useful to reduce feature dimension and make features condensed. Try to add the PCA function and compare these two versions.}
+\While{True};
+\State $\hat{q}^{'} = \hat{q}.nearestNeighbor(\hat{p})$ \Comment{To find a match and align the pcd size.}
+\State $H = \sum_{i=1}^{n_p}{\hat{p_i}\hat{q_i}^T}$
+\State $USV^T = SingularValueDecomposition(H)$
+\State $ R^* = VU^T$
+\State $ t^* = \hat{q}^{'}-R^*\hat{p}$
+\State $\hat{p} = R^*\cdot \hat{p} + t^*$
+\If{Change of $R$ and $t$ is smaller than threshold $\epsilon$}
+break;
+\ElsIf{The loss $\sum_{i=1}^{n_p}||(R\cdot p_i+t)-q_i||^2$ is smaller than threshold $\epsilon$}
+break;
+\ElsIf{Iteraction times exceed the threshold}
+break;
+\Endif
+\Endwhile
+\end{algorithmic}
+\end{algorithm}
+You are required to implement the ICP algorithm from scratch, and third-party libraries can only be used for mathematical computation and visualization. You should visualize at least three pairs of point clouds in your report, and the source and target point cloud should have different colors, as in Figure \ref{fig:registraion}.
 
-~\\
-~\\
-~\\
-~\\
+\emph{Hint: KD tree is very useful to speed up the algorithm, try it out! (Scipy.spatial.KDTree is a good choice.) If you think the number of points in the point cloud is still too large, you may consider to use some downsample methods like farthest point sampling.}
+% ~\\
+% ~\\
+% ~\\
+% ~\\
 
-\newpage
+% \newpage
 
-\section{[50 points] Deep Convolutional Generative Adversarial Networks}
-A generative adversarial network (GAN) is a class of machine learning frameworks and a prominent framework for approaching generative AI. In this section, we will train the DCGAN to generate grumpy cats from samples of random noise. To implement the DCGAN, we need to specify three things: 1) the generator, 2) the discriminator, and 3) the training procedure. We will develop each of these three components in the following subsections. \textbf{The code and data required for this section are in the compressed package.} 
-\begin{enumerate}
-    \item Data Augmentation. DCGAN will perform poorly without data augmentation on a small-sized dataset because the discriminator can easily overfit to a real dataset. To rescue, we need to add some data augmentation such as random crop and random horizontal flip. You need to fill in the deluxe version of data augmentation in \textbf{data\_loader.py}. We provide some scripts for you to begin with. You need to compose them into a transform object which is passed to \textbf{CustomDataset}.
-    \item Discriminator. The discriminator in this DCGAN is a convolutional neural network with the following architecture:
-    \begin{figure}[h]
-        \centering
-        \includegraphics[width=0.9\linewidth]{disc.png}
-        % \caption{Enter Caption}
-        \label{fig:enter-label}
-    \end{figure}
-        \begin{itemize}
-            \item Padding. In each of the convolutional layers shown above, we downsample the spatial dimension of the input volume by a factor of 2. Given that we use kernel size K = 4 and stride S = 2, what should the padding be? Write your answer on your website, and show your work (e.g., the formula you used to derive the padding).
-            \item Implementation. Implement this architecture by filling in the \textbf{\_\_init\_\_} and forward method of the\textbf{ DCDiscriminator} class in \textbf{models.py}, shown below. The\textbf{ conv\_dim} argument does not need to be changed unless you are using larger images, as it should specify the initial image size. Note the function \textbf{conv} is defined in \textbf{models.py}.
-        \end{itemize}
-    \item Generator. Now, we will implement the generator of the DCGAN, which consists of a sequence of transposed convolutional layers that progressively upsample the input noise sample to generate a fake image. The generator in this DCGAN has the following architecture:
-    \begin{figure}[h]
-        \centering
-        \includegraphics[width=0.9\linewidth]{gene.png}
-    \end{figure}
-    \begin{itemize}
-        \item Implementation. Implement this architecture by filling in the \textbf{\_\_init\_\_} and forward method of the \textbf{DCGenerator} class in \textbf{models.py}. Note: Use the \textbf{deconv} function (analogous to the \textbf{conv} function used for the discriminator above) in your generator implementation.
-    \end{itemize}
-    \item Training Loop. Next, you will implement the training loop for the DCGAN. A DCGAN is simply a GAN with a specific type of generator and discriminator; thus, we train it in exactly the same way as a standard GAN. The pseudo-code for the training procedure is shown below. The actual implementation is simpler than it may seem from the pseudo-code: this will give you practice in translating math to code. 
-    \begin{figure}[h]
-        \centering
-        \includegraphics[width=0.9\linewidth]{pseudo.png}
-    \end{figure}
-    \begin{itemize}
-        \item Implementation. Open up the file \textbf{vanilla\_gan.py }and fill in the indicated parts of the \textbf{training\_loop} function. There are 5 numbered bullets in the code to fill in for the discriminator and 3 bullets for the generator. Each of these can be done in a single line of code, although you will not lose marks for using multiple lines.
-    \end{itemize}
+\section{[20 points] ICP with RANSAC} 
+ICP algorithm does not take noisy points into consideraction, and RANSAC is known to be effective in relieving this problem. Please use the RANSAC to reimplement the ICP. More precisely, you should use RANSAC to calculate the rigid transformation in each iteraction of ICP algorithm.
 
-    \item Experiment. Train the DCGAN with the command:
-    \begin{lstlisting}
-        python vanilla_gan.py --num_epochs=100
-    \end{lstlisting}
-    The script saves the output of the generator for a fixed noise sample every 200 iterations throughout training; this allows you to see how the generator improves over time. More command line parameters can be found in \textbf{vanilla\_gan.py}.
-    \begin{itemize}
-        \item Screenshots of discriminator and generator training loss with both \textbf{data\_aug=basic/deluxe} – 4 curves in total. Briefly explain what the curves should look like if GAN manages to train.
-        \item Set data augmentation to deluxe and then show one of the samples from early in training (e.g., iteration 200) and one of the samples from later in training, and give the iteration number for those samples. Briefly comment on the quality of the samples, and in what way they improve through training. (It typically requires more than 3,000 iterations to attain a visually appealing effect. Pictures in the early stages of training will be blurry.)
-        
-    \end{itemize}
-    \item Discussion. 
-        \begin{itemize}
-            \item DCGAN is more stable than traditional GAN in training, but there are still certain problems. What problems did you find during this training?
-            \item How do you think it should be improved? Do other generative models (VAE, Diffusion) also have such problems?
-        \end{itemize}
-\end{enumerate}
+Similarly, third-party libraries can only be used for mathematical computation and visualization. You should visualize at least three pairs of point clouds in your report.
 
 
 \end{document}
