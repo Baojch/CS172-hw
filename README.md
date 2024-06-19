@@ -1,6 +1,4 @@
 ### CS172-Assignment-2
-##### Name: Jiacheng Bao
-##### ID: 2021533098
 
 ### 1. Understand Point Cloud
 <div style="display: flex; flex-direction: row; justify-content: center; gap: 10px;">
